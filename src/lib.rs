@@ -1,9 +1,11 @@
 use tokio::time::sleep;
 use std::time::Duration;
+use aws_sdk_iam::Client as IamClient;
+use aws_sdk_iam::operation::get_user::GetUserOutput;
 use aws_sdk_lightsail::Client as LightsailClient;
 use aws_sdk_lightsail::types::{StopInstanceOnIdleRequest, AddOnRequest, AddOnType};
-use aws_sdk_lightsail::operation::create_instances::{CreateInstancesOutput, CreateInstancesError};
 use aws_sdk_lightsail::operation::get_instance::GetInstanceOutput;
+use aws_sdk_secretsmanager::Client as SecretsClient;
 
 pub struct InstanceConfig {
     pub name: String,
@@ -14,7 +16,13 @@ pub struct InstanceConfig {
     pub idle_duration: String
 }
 
-pub fn build_config(user: &str, size: &str, mtype: &str, zone: &str) -> InstanceConfig{
+pub struct IamConfig {
+    pub user: String,
+    pub group: String,
+    pub arn:  String,
+}
+
+pub fn build_instance_config(user: &str, size: &str, mtype: &str, zone: &str) -> InstanceConfig{
     let bundle_id = match mtype {
         "gpu" => format!("gpu_nvidia_{size}_1_0"),
         "std" => format!("app_standard_{size}_1_0"),
@@ -33,10 +41,36 @@ pub fn build_config(user: &str, size: &str, mtype: &str, zone: &str) -> Instance
         idle_duration: "15".to_string(),
     }
 }
+
+pub fn build_iam_config(user: &str, group: &str, arn: &str) -> IamConfig {
+    IamConfig {
+        user: user.to_string(),
+        group: group.to_string(),
+        arn: arn.to_string(),
+    }
+}
 pub async fn get_instance(lfr_client: LightsailClient, instance_name: &str) -> GetInstanceOutput {
     lfr_client.get_instance().instance_name(instance_name).send().await.unwrap()
 }
 
+pub async fn get_user(iam_client: IamClient, user: &str) -> GetUserOutput {
+    iam_client.get_user().user_name(user).send().await.unwrap()
+}
+
+pub fn build_policy_doc(arn:  &str) -> String {
+    format!(r#"{{
+        "Version": "2012-10-17",
+        "Statement": [
+            {{
+                "Effect": "Allow",
+                "Action": [
+                    "lightsail:*"
+                ],
+                "Resource": "{arn}"
+            }}
+        ]
+    }}"#)
+}
 pub async fn probe_state(lfr_client: LightsailClient, instance_name: &str, state: &str) -> bool {
     let mut in_state = false;
     while !in_state {
@@ -73,7 +107,6 @@ pub async fn create_instance(lfr_client: LightsailClient, instance_config: Insta
         .await {
         Ok(response) => {
             println!("SUCCESS: Created instance {}", &instance_config.name);
-            // println!("{}",response);
             true
         },
         Err(error) => {
@@ -98,10 +131,74 @@ pub async fn create_instance(lfr_client: LightsailClient, instance_config: Insta
         } else {
             println!("ERROR: Instance {} is not running.", &instance_config.name);
         }
-    };
+    } else {
+        println!("ERROR: Unable to create instance {}", &instance_config.name);
+        std::process::exit(1);
+    }
 
     // Return instance details
     get_instance(lfr_client.clone(), &instance_config.name).await
+}
+
+pub async fn create_user(iam_client: IamClient, secrets_client: SecretsClient, iam_config: IamConfig) -> GetUserOutput {
+    let user_created = match iam_client.create_user()
+        .user_name(&iam_config.user)
+        .send()
+        .await {
+            Ok(response) => {
+            println!("SUCCESS: Created user {}", &iam_config.user);
+            true
+        },
+        Err(error) => {
+        println!("ERROR: Failed to create user {}", &iam_config.user);
+        println!("{:?}", error);
+        false
+        }
+    };
+    // If user created
+    if user_created {
+        // Add to group
+        let _ = iam_client.add_user_to_group()
+            .user_name(&iam_config.user)
+            .group_name(&iam_config.group)
+            .send()
+            .await
+            .unwrap();
+        println!("SUCCESS: User added to group {}", &iam_config.group);
+        // Create login profile
+        let password = secrets_client.get_random_password()
+            .password_length(8)
+            .send()
+            .await
+            .unwrap()
+            .random_password
+            .unwrap();
+        let _ = iam_client.create_login_profile()
+            .user_name(&iam_config.user)
+            .password(&password)
+            .password_reset_required(true)
+            .send()
+            .await
+            .unwrap();
+        println!("SUCCESS: Created login profile");
+        // Add user access policy
+        let user_policy = format!("lfr-{}-access", &iam_config.user);
+        let policy_document = build_policy_doc(&iam_config.arn);
+        let _ = iam_client.put_user_policy()
+            .user_name(&iam_config.user)
+            .policy_name(&user_policy)
+            .policy_document(policy_document)
+            .send()
+            .await
+            .unwrap();
+        println!("SUCCESS: Added user access policy {}", &user_policy);
+        println!("SUCCESS: Created user {} with unique onetime password: {}", &iam_config.user, password);
+    } else {
+        println!("ERROR: Unable to create user {}", &iam_config.user);
+        std::process::exit(1);
+    }
+    // Return user details
+    get_user(iam_client.clone(), &iam_config.user).await
 }
 
 

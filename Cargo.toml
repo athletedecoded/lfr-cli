@@ -10,6 +10,8 @@ dotenv = "0.15.0"
 clap = { version = "4.5.4", features = ["derive"] }
 aws-config = { version = "1.1.7", features = ["behavior-version-latest"] }
 aws-sdk-lightsail = "1.22.0"
+aws-sdk-iam = "1.21.0"
+aws-sdk-secretsmanager = "1.22.0"
 tokio = { version = "1", features = ["full"] }
 
 
