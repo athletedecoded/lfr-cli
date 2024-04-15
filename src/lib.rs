@@ -192,7 +192,7 @@ pub async fn create_user(iam_client: IamClient, secrets_client: SecretsClient, i
             .await
             .unwrap();
         println!("SUCCESS: Added user access policy {}", &user_policy);
-        println!("SUCCESS: Created user {} with unique onetime password: {}", &iam_config.user, password);
+        println!("SUCCESS: Created user '{}' with unique onetime password: {}", &iam_config.user, password);
     } else {
         println!("ERROR: Unable to create user {}", &iam_config.user);
         std::process::exit(1);
