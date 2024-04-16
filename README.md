@@ -35,12 +35,12 @@ AWS_DEFAULT_REGION=<YOUR_AWS_REGION>
 LFR_ZONE=<LFR_AVAILABILITY_ZONE>
 ```
 
-### New Users
+### CLI Tool
 
-To create a new user and provision them a new instance, run
+**New User + Provision New Instance**
 
 ```
-$ cargo run new --user <username> --group <iam_group> --size <size> --mtype <machine_type>
+$ cargo run new --user <username> --group <iam_group> --size <machine_size> --mtype <machine_type>
 ```
 
 where: 
@@ -49,11 +49,24 @@ where:
 * size: one of "xl", "2xl", "4xl"
 * mtype: one of "gpu", "std"
 
-### Instance
 
-To retrieve instance details of an existing instance
+**Get Instance Details**
 
 ```
 $ cargo run get --instance <instance_name>
 ```
 
+**New Instance for Existing User**
+
+NB: Currently this requires manually adding the new arn to the existing user access policy
+
+```
+$ cargo run instance --user <username> --size <machine_size> --mtype <machine_type>
+```
+
+
+
+
+### ToDos
+
+*[ ] Auto add arn to existing policy

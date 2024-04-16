@@ -57,7 +57,7 @@ pub async fn get_user(iam_client: IamClient, user: &str) -> GetUserOutput {
     iam_client.get_user().user_name(user).send().await.unwrap()
 }
 
-pub fn build_policy_doc(arn:  &str) -> String {
+pub fn build_policy_doc(arn:  String) -> String {
     format!(r#"{{
         "Version": "2012-10-17",
         "Statement": [
@@ -183,7 +183,7 @@ pub async fn create_user(iam_client: IamClient, secrets_client: SecretsClient, i
         println!("SUCCESS: Created login profile");
         // Add user access policy
         let user_policy = format!("lfr-{}-access", &iam_config.user);
-        let policy_document = build_policy_doc(&iam_config.arn);
+        let policy_document = build_policy_doc(iam_config.arn);
         let _ = iam_client.put_user_policy()
             .user_name(&iam_config.user)
             .policy_name(&user_policy)

@@ -3,7 +3,7 @@ use aws_sdk_iam::Client as IamClient;
 use aws_sdk_lightsail::Client as LightsailClient;
 use aws_sdk_secretsmanager::Client as SecretsClient;
 
-use lfr_cli::{create_instance, create_user, get_instance, build_instance_config, build_iam_config};
+use lfr_cli::{create_instance, create_user, get_instance, build_instance_config, build_iam_config, build_policy_doc};
 
 #[derive(Parser)]
 //add extended help
@@ -33,6 +33,14 @@ enum Commands {
     Get {
         #[clap(short, long)]
         instance: String
+    },
+    Instance {
+        #[clap(short, long)]
+        user: String,
+        #[clap(short, long)]
+        size: String,
+        #[clap(short, long)]
+        mtype: String
     }
 }
 
@@ -63,7 +71,16 @@ async fn main() {
             // Get instance detais
             let instance_details = get_instance(lfr_client.clone(), &instance).await;
             println!("Instance details: {:?}", instance_details);
-        }
+        },
+        Some(Commands::Instance { user, size, mtype }) => {
+            // Create new instance
+            let zone = dotenv::var("LFR_ZONE").expect("LFR_ZONE not set");
+            let instance_config = build_instance_config(&user, &size, &mtype, &zone);
+            let instance_details = create_instance(lfr_client.clone(), instance_config).await;
+            let arn = instance_details.instance.unwrap().arn.unwrap();
+            // ToDo: Auto add instance arn to policy
+            println!("SUCCESS: Manually add instance arn {} to policy 'lfr-{}-access'", &arn, &user);
+        },
         None => {
             println!("No subcommand was used");
         }
