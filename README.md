@@ -37,7 +37,7 @@ LFR_ZONE=<LFR_AVAILABILITY_ZONE>
 
 ### CLI Tool
 
-**New User + Provision New Instance**
+**Create New User + Provision New Instance**
 
 ```
 $ cargo run new --user <username> --group <iam_group> --size <machine_size> --mtype <machine_type>
@@ -56,7 +56,7 @@ where:
 $ cargo run get --instance <instance_name>
 ```
 
-**New Instance for Existing User**
+**Create New Instance for Existing User**
 
 NB: Currently this requires manually adding the new arn to the existing user access policy
 
@@ -64,7 +64,21 @@ NB: Currently this requires manually adding the new arn to the existing user acc
 $ cargo run instance --user <username> --size <machine_size> --mtype <machine_type>
 ```
 
+**Delete Instance**
 
+NB: Instance must exist and be in stopped state
+
+```
+$ cargo run delete --instance <instance_name>
+```
+
+**Delete User**
+
+NB: Will delete user account and associated instances
+
+```
+$ cargo run delete --user <user_name>
+```
 
 
 ### ToDos

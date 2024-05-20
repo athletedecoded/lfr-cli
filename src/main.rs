@@ -3,7 +3,9 @@ use aws_sdk_iam::Client as IamClient;
 use aws_sdk_lightsail::Client as LightsailClient;
 use aws_sdk_secretsmanager::Client as SecretsClient;
 
-use lfr_cli::{create_instance, create_user, get_instance, build_instance_config, build_iam_config, build_policy_doc};
+use lfr_cli::{create_instance, delete_instance,
+              create_user, get_instance, build_instance_config, build_iam_config, build_policy_doc
+};
 
 #[derive(Parser)]
 //add extended help
@@ -41,6 +43,14 @@ enum Commands {
         size: String,
         #[clap(short, long)]
         mtype: String
+    },
+    Delete {
+        #[clap(short, long)]
+        instance: Option<String>,
+        #[clap(short, long)]
+        user: Option<String>,
+        #[clap(short, long)]
+        group: Option<String>
     }
 }
 
@@ -80,6 +90,21 @@ async fn main() {
             let arn = instance_details.instance.unwrap().arn.unwrap();
             // ToDo: Auto add instance arn to policy
             println!("SUCCESS: Manually add instance arn {} to policy 'lfr-{}-access'", &arn, &user);
+        },
+        Some(Commands::Delete {instance, user, group}) => {
+            if let Some(instance_name) = instance {
+                let resp = delete_instance(lfr_client.clone(), &instance_name).await;
+                println!("SUCCESS: Deleted instance: {}", &instance_name);
+            } else if let Some(user_name) = user {
+                // Handle the case where user is supplied
+                println!("Deleting user: {}", user_name);
+            } else if let Some(group_name) = group {
+                // Handle the case where group is supplied
+                println!("Deleting group: {}", group_name);
+            } else {
+                // Handle the case where none of the options are supplied
+                println!("No instance, user, or group supplied for deletion.");
+            }
         },
         None => {
             println!("No subcommand was used");

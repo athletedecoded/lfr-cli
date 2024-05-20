@@ -5,6 +5,7 @@ use aws_sdk_iam::operation::get_user::GetUserOutput;
 use aws_sdk_lightsail::Client as LightsailClient;
 use aws_sdk_lightsail::types::{StopInstanceOnIdleRequest, AddOnRequest, AddOnType};
 use aws_sdk_lightsail::operation::get_instance::GetInstanceOutput;
+use aws_sdk_lightsail::operation::delete_instance::DeleteInstanceOutput;
 use aws_sdk_secretsmanager::Client as SecretsClient;
 
 pub struct InstanceConfig {
@@ -37,7 +38,7 @@ pub fn build_instance_config(user: &str, size: &str, mtype: &str, zone: &str) ->
         zone: zone.to_string(),
         blueprint_id: "lfr_ubuntu_1_0".to_string(),
         bundle_id: bundle_id,
-        idle_threshold: "5".to_string(),
+        idle_threshold: "2".to_string(),
         idle_duration: "15".to_string(),
     }
 }
@@ -51,6 +52,10 @@ pub fn build_iam_config(user: &str, group: &str, arn: &str) -> IamConfig {
 }
 pub async fn get_instance(lfr_client: LightsailClient, instance_name: &str) -> GetInstanceOutput {
     lfr_client.get_instance().instance_name(instance_name).send().await.unwrap()
+}
+
+pub async fn delete_instance(lfr_client: LightsailClient, instance_name: &str) -> DeleteInstanceOutput {
+    lfr_client.delete_instance().instance_name(instance_name).force_delete_add_ons(true).send().await.unwrap()
 }
 
 pub async fn get_user(iam_client: IamClient, user: &str) -> GetUserOutput {
