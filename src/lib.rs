@@ -2,9 +2,11 @@ use tokio::time::sleep;
 use std::time::Duration;
 use aws_sdk_iam::Client as IamClient;
 use aws_sdk_iam::operation::get_user::GetUserOutput;
+use aws_sdk_iam::operation::delete_user::DeleteUserOutput;
 use aws_sdk_lightsail::Client as LightsailClient;
 use aws_sdk_lightsail::types::{StopInstanceOnIdleRequest, AddOnRequest, AddOnType};
 use aws_sdk_lightsail::operation::get_instance::GetInstanceOutput;
+use aws_sdk_lightsail::operation::get_instances::GetInstancesOutput;
 use aws_sdk_lightsail::operation::delete_instance::DeleteInstanceOutput;
 use aws_sdk_secretsmanager::Client as SecretsClient;
 
@@ -53,6 +55,9 @@ pub fn build_iam_config(user: &str, group: &str, arn: &str) -> IamConfig {
 pub async fn get_instance(lfr_client: LightsailClient, instance_name: &str) -> GetInstanceOutput {
     lfr_client.get_instance().instance_name(instance_name).send().await.unwrap()
 }
+pub async fn get_all_instances(lfr_client: LightsailClient) -> GetInstancesOutput {
+    lfr_client.get_instances().send().await.unwrap()
+}
 
 pub async fn delete_instance(lfr_client: LightsailClient, instance_name: &str) -> DeleteInstanceOutput {
     lfr_client.delete_instance().instance_name(instance_name).force_delete_add_ons(true).send().await.unwrap()
@@ -60,6 +65,17 @@ pub async fn delete_instance(lfr_client: LightsailClient, instance_name: &str) -
 
 pub async fn get_user(iam_client: IamClient, user: &str) -> GetUserOutput {
     iam_client.get_user().user_name(user).send().await.unwrap()
+}
+pub async fn delete_user(iam_client: IamClient, user: &str, group: &str) -> DeleteUserOutput {
+    // Remove user from group
+    let _ = iam_client.remove_user_from_group().user_name(user).group_name(group).send().await.unwrap();
+    // Delete login profile
+    let _ = iam_client.delete_login_profile().user_name(user).send().await.unwrap();
+    // Delete user access policy
+    let user_policy = format!("lfr-{}-access", user);
+    let _ = iam_client.delete_user_policy().user_name(user).policy_name(user_policy).send().await.unwrap();
+    // Delete IAM account
+    iam_client.delete_user().user_name(user).send().await.unwrap()
 }
 
 pub fn build_policy_doc(arn:  String) -> String {

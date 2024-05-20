@@ -3,9 +3,7 @@ use aws_sdk_iam::Client as IamClient;
 use aws_sdk_lightsail::Client as LightsailClient;
 use aws_sdk_secretsmanager::Client as SecretsClient;
 
-use lfr_cli::{create_instance, delete_instance,
-              create_user, get_instance, build_instance_config, build_iam_config, build_policy_doc
-};
+use lfr_cli::{create_instance, delete_instance, get_instance, get_all_instances, create_user, delete_user, build_instance_config, build_iam_config, build_policy_doc};
 
 #[derive(Parser)]
 //add extended help
@@ -92,18 +90,34 @@ async fn main() {
             println!("SUCCESS: Manually add instance arn {} to policy 'lfr-{}-access'", &arn, &user);
         },
         Some(Commands::Delete {instance, user, group}) => {
+            // Delete single instance
             if let Some(instance_name) = instance {
-                let resp = delete_instance(lfr_client.clone(), &instance_name).await;
+                let _resp = delete_instance(lfr_client.clone(), &instance_name).await;
                 println!("SUCCESS: Deleted instance: {}", &instance_name);
-            } else if let Some(user_name) = user {
-                // Handle the case where user is supplied
-                println!("Deleting user: {}", user_name);
             } else if let Some(group_name) = group {
-                // Handle the case where group is supplied
-                println!("Deleting group: {}", group_name);
+                // Delete user and their instances
+                if let Some(user_name) = user {
+                    let _ = delete_user(iam_client.clone(), &user_name, &group_name).await;
+                    println!("SUCCESS: Deleted user: {}", user_name);
+                    let all_instances = get_all_instances(lfr_client.clone()).await;
+                    let user_instances: Vec<String> = all_instances.instances
+                        .unwrap_or_default()  // Provide a default if instances is None
+                        .into_iter()  // Move ownership if you want to consume instances
+                        .filter_map(|instance| {
+                            instance.name.as_ref().filter(|name| name.starts_with(&user_name)).cloned()  // Safely filter and clone the name
+                        })
+                        .collect();
+                    for instance in user_instances {
+                        let _ = delete_instance(lfr_client.clone(), &instance).await;
+                        println!("SUCCESS: Deleted instance {}", &instance);
+                    }
+                } else {
+                    // Delete entire group (all users + their instances)
+                    println!("SUCCESS: Deleted group: {}", group_name);
+                }
             } else {
                 // Handle the case where none of the options are supplied
-                println!("No instance, user, or group supplied for deletion.");
+                println!("ERROR: Incorrect arguments supplied.");
             }
         },
         None => {

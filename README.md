@@ -74,10 +74,10 @@ $ cargo run delete --instance <instance_name>
 
 **Delete User**
 
-NB: Will delete user account and associated instances
+NB: Will delete user account and associated instances. Must supply group name.
 
 ```
-$ cargo run delete --user <user_name>
+$ cargo run delete --user <user_name> --group <group_name>
 ```
 
 
