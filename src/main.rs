@@ -3,7 +3,12 @@ use aws_sdk_iam::Client as IamClient;
 use aws_sdk_lightsail::Client as LightsailClient;
 use aws_sdk_secretsmanager::Client as SecretsClient;
 
-use lfr_cli::{create_instance, delete_instance, get_instance, delete_group, create_user, delete_user, delete_user_instances, build_instance_config, build_iam_config};
+use lfr_cli::{
+    create_instance, delete_instance, get_instance,
+    create_group, delete_group,
+    create_user, delete_user, delete_user_instances,
+    build_instance_config, build_iam_config
+};
 
 #[derive(Parser)]
 //add extended help
@@ -49,6 +54,10 @@ enum Commands {
         user: Option<String>,
         #[clap(short, long)]
         group: Option<String>
+    },
+    Group {
+        #[clap(short, long)]
+        name: String
     }
 }
 
@@ -109,6 +118,10 @@ async fn main() {
                 // Handle the case where none of the options are supplied
                 println!("ERROR: Incorrect arguments supplied.");
             }
+        },
+        Some(Commands::Group {name}) => {
+            let _ = create_group(iam_client.clone(), &name).await;
+            println!("SUCCESS: Created new group {}", &name);
         },
         None => {
             println!("No subcommand was used");

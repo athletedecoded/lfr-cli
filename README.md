@@ -64,6 +64,14 @@ NB: Currently this requires manually adding the new arn to the existing user acc
 $ cargo run instance --user <username> --size <machine_size> --mtype <machine_type>
 ```
 
+**Create New Group**
+
+NB: Will create with `lfr-student-access` policy
+
+```
+$ cargo run group --name <group_name>
+```
+
 **Delete Instance**
 
 NB: Instance must exist and be in stopped state

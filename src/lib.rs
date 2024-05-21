@@ -1,6 +1,7 @@
 use tokio::time::sleep;
 use std::time::Duration;
 use aws_sdk_iam::Client as IamClient;
+use aws_sdk_iam::operation::attach_group_policy::AttachGroupPolicyOutput;
 use aws_sdk_iam::operation::get_user::GetUserOutput;
 use aws_sdk_iam::operation::delete_user::DeleteUserOutput;
 use aws_sdk_iam::operation::delete_group::DeleteGroupOutput;
@@ -101,6 +102,15 @@ pub async fn delete_user_instances(lfr_client: LightsailClient, user: &str) {
         println!("SUCCESS: Deleted instance {}", &instance);
     }
 }
+
+pub async fn create_group(iam_client: IamClient, group: &str) -> AttachGroupPolicyOutput {
+    // Create group
+    let _ = iam_client.create_group().group_name(group).send().await.unwrap();
+    // Attach student access policy
+    let group_policy = "arn:aws:iam::381492212823:policy/lfr-student-access".to_string();
+    iam_client.attach_group_policy().group_name(group).policy_arn(group_policy).send().await.unwrap()
+}
+
 pub async fn delete_group(iam_client: IamClient, lfr_client: LightsailClient, group: &str) -> DeleteGroupOutput {
     let all_users = iam_client.get_group().group_name(group).send().await.unwrap();
     for user in all_users.users {
