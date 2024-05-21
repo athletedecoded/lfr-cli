@@ -80,7 +80,12 @@ NB: Will delete user account and associated instances. Must supply group name.
 $ cargo run delete --user <user_name> --group <group_name>
 ```
 
+**Delete Group**
+
+NB: 
 
 ### ToDos
 
+*[ ] Debug profile failure "password doesn't contain symbol"
+*[ ] Add create group if DNE
 *[ ] Auto add arn to existing policy
