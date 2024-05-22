@@ -33,6 +33,7 @@ AWS_ACCESS_KEY_ID=<YOUR_ACCESS_KEY>
 AWS_SECRET_ACCESS_KEY=<YOUR_SECRET_KEY>
 AWS_DEFAULT_REGION=<YOUR_AWS_REGION>
 LFR_ZONE=<LFR_AVAILABILITY_ZONE>
+AWS_ACCOUNT_ID=<YOUR_ACCOUNT_ID>
 ```
 
 ### CLI Tool
@@ -67,7 +68,6 @@ $ cargo run instance --user <username> --size <machine_size> --mtype <machine_ty
 **Create New Group**
 
 NB: Will create with `lfr-student-access` policy
-
 ```
 $ cargo run group --name <group_name>
 ```

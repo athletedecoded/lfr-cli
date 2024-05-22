@@ -24,7 +24,7 @@ pub struct InstanceConfig {
 pub struct IamConfig {
     pub user: String,
     pub group: String,
-    pub arn:  String,
+    pub arn:  String
 }
 
 pub fn build_instance_config(user: &str, size: &str, mtype: &str, zone: &str) -> InstanceConfig{
@@ -42,8 +42,8 @@ pub fn build_instance_config(user: &str, size: &str, mtype: &str, zone: &str) ->
         zone: zone.to_string(),
         blueprint_id: "lfr_ubuntu_1_0".to_string(),
         bundle_id: bundle_id,
-        idle_threshold: "2".to_string(),
-        idle_duration: "15".to_string(),
+        idle_threshold: "1".to_string(),
+        idle_duration: "20".to_string(),
     }
 }
 
@@ -51,7 +51,7 @@ pub fn build_iam_config(user: &str, group: &str, arn: &str) -> IamConfig {
     IamConfig {
         user: user.to_string(),
         group: group.to_string(),
-        arn: arn.to_string(),
+        arn: arn.to_string()
     }
 }
 pub async fn get_instance(lfr_client: LightsailClient, instance_name: &str) -> GetInstanceOutput {
@@ -103,15 +103,15 @@ pub async fn delete_user_instances(lfr_client: LightsailClient, user: &str) {
     }
 }
 
-pub async fn create_group(iam_client: IamClient, group: &str) -> AttachGroupPolicyOutput {
+pub async fn create_group(iam_client: IamClient, group: &str, account_id: &str) -> AttachGroupPolicyOutput {
     // Create group
     let _ = iam_client.create_group().group_name(group).send().await.unwrap();
     // Attach student access policy
-    let group_policy = "arn:aws:iam::381492212823:policy/lfr-student-access".to_string();
+    let group_policy = format!("arn:aws:iam::{account_id}:policy/lfr-student-access");
     iam_client.attach_group_policy().group_name(group).policy_arn(group_policy).send().await.unwrap()
 }
 
-pub async fn delete_group(iam_client: IamClient, lfr_client: LightsailClient, group: &str) -> DeleteGroupOutput {
+pub async fn delete_group(iam_client: IamClient, lfr_client: LightsailClient, group: &str, account_id: &str) -> DeleteGroupOutput {
     let all_users = iam_client.get_group().group_name(group).send().await.unwrap();
     for user in all_users.users {
         // Delete user instances
@@ -121,13 +121,13 @@ pub async fn delete_group(iam_client: IamClient, lfr_client: LightsailClient, gr
         println!("SUCCESS: Deleted user {} from group {}", user.user_name, group);
     }
     // Detach group policy
-    let group_policy = "arn:aws:iam::381492212823:policy/lfr-student-access".to_string();
+    let group_policy = format!("arn:aws:iam::{account_id}:policy/lfr-student-access");
     let _ = iam_client.detach_group_policy().group_name(group).policy_arn(&group_policy).send().await.unwrap();
     // Delete group
     iam_client.delete_group().group_name(group).send().await.unwrap()
 }
 
-pub fn build_policy_doc(arn:  String) -> String {
+pub fn build_policy_doc(instance_arn: String) -> String {
     format!(r#"{{
         "Version": "2012-10-17",
         "Statement": [
@@ -136,7 +136,7 @@ pub fn build_policy_doc(arn:  String) -> String {
                 "Action": [
                     "lightsail:*"
                 ],
-                "Resource": "{arn}"
+                "Resource": "{instance_arn}"
             }}
         ]
     }}"#)

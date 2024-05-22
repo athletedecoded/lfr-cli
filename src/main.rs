@@ -111,7 +111,8 @@ async fn main() {
                     println!("SUCCESS: Deleted user: {}", user_name);
                 } else {
                     // Delete entire group (all users + their instances)
-                    let _ = delete_group(iam_client.clone(), lfr_client.clone(), &group_name).await;
+                    let account_id = dotenv::var("AWS_ACCOUNT_ID").expect("AWS_ACCOUNT_ID not set");
+                    let _ = delete_group(iam_client.clone(), lfr_client.clone(), &group_name, &account_id).await;
                     println!("SUCCESS: Deleted group: {}", group_name);
                 }
             } else {
@@ -120,7 +121,8 @@ async fn main() {
             }
         },
         Some(Commands::Group {name}) => {
-            let _ = create_group(iam_client.clone(), &name).await;
+            let account_id = dotenv::var("AWS_ACCOUNT_ID").expect("AWS_ACCOUNT_ID not set");
+            let _ = create_group(iam_client.clone(), &name, &account_id).await;
             println!("SUCCESS: Created new group {}", &name);
         },
         None => {
