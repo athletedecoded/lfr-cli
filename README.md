@@ -38,6 +38,8 @@ AWS_ACCOUNT_ID=<YOUR_ACCOUNT_ID>
 
 ### CLI Tool
 
+#### CREATE
+
 **Create New User + Provision New Instance**
 
 ```
@@ -50,12 +52,6 @@ where:
 * size: one of "xl", "2xl", "4xl"
 * mtype: one of "gpu", "std"
 
-
-**Get Instance Details**
-
-```
-$ cargo run get --instance <instance_name>
-```
 
 **Create New Instance for Existing User**
 
@@ -71,6 +67,22 @@ NB: Will create with `lfr-student-access` policy
 ```
 $ cargo run group --name <group_name>
 ```
+
+#### GET
+
+**Get Instance Details**
+
+```
+$ cargo run get --instance <instance_name>
+```
+
+**Get SSH Key**
+
+```
+$ cargo run get --key
+```
+
+#### Delete
 
 **Delete Instance**
 

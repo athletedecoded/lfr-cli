@@ -1,4 +1,6 @@
-use clap::Parser;
+use std::fs::File;
+use std::io::Write;
+use clap::{Parser, ArgAction};
 use aws_sdk_iam::Client as IamClient;
 use aws_sdk_lightsail::Client as LightsailClient;
 use aws_sdk_secretsmanager::Client as SecretsClient;
@@ -37,7 +39,9 @@ enum Commands {
     },
     Get {
         #[clap(short, long)]
-        instance: String
+        instance: Option<String>,
+        #[clap(short, long, action = ArgAction::SetTrue)]
+        key: Option<bool>
     },
     Instance {
         #[clap(short, long)]
@@ -84,10 +88,31 @@ async fn main() {
             let iam_config = build_iam_config(&user, &group, &arn);
             let _ = create_user(iam_client.clone(), secrets_client.clone(), iam_config).await;
         },
-        Some(Commands::Get { instance }) => {
-            // Get instance detais
-            let instance_details = get_instance(lfr_client.clone(), &instance).await;
-            println!("Instance details: {:?}", instance_details);
+        Some(Commands::Get { instance, key }) => {
+            // Get instance details
+            if let Some(instance_name) = instance {
+                let instance_details = get_instance(lfr_client.clone(), &instance_name).await;
+                println!("Instance details: {:?}", instance_details);
+            } else if let Some(_key) = key {
+                let keypair = lfr_client.download_default_key_pair().send().await.unwrap();
+                if let Some(private_key) = keypair.private_key_base64 {
+                    match File::create("dkp_rsa") {
+                        Ok(mut file) => {
+                            if let Err(e) = file.write_all(private_key.as_bytes()) {
+                                println!("ERROR: Failed to write private key to file: {:?}", e);
+                            } else {
+                                println!("SUCCESS: Private key written to dkp_rsa");
+                            }
+                        }
+                        Err(e) => println!("ERROR: Failed to create file: {:?}", e),
+                    }
+                } else {
+                    println!("ERROR: No private key found in response.");
+                }
+            } else {
+                // Handle the case where none of the options are supplied
+                println!("ERROR: Incorrect arguments supplied.");
+            }
         },
         Some(Commands::Instance { user, size, mtype }) => {
             // Create new instance

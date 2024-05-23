@@ -2,4 +2,6 @@
 .env
 .idea
 
+dkp_rsa
+
 Cargo.lock
