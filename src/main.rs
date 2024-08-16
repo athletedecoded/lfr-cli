@@ -4,13 +4,13 @@ use clap::{Parser, ArgAction};
 use aws_sdk_iam::Client as IamClient;
 use aws_sdk_lightsail::Client as LightsailClient;
 use aws_sdk_secretsmanager::Client as SecretsClient;
-
-use lfr_cli::{
+use lfr::{
     create_instance, delete_instance, get_instance,
     create_group, delete_group,
     create_user, delete_user, delete_user_instances,
-    build_instance_config, build_iam_config
+    build_instance_config,  build_iam_config
 };
+
 
 #[derive(Parser)]
 //add extended help
