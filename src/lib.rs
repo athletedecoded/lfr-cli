@@ -223,8 +223,10 @@ pub async fn create_user(iam_client: IamClient, secrets_client: SecretsClient, i
             .unwrap();
         println!("SUCCESS: User added to group {}", &iam_config.group);
         // Create login profile
+        let exclude_chars = "\"'`,./:;<>?\\~".to_string();
         let password = secrets_client.get_random_password()
             .password_length(8)
+            .exclude_characters(exclude_chars)
             .send()
             .await
             .unwrap()

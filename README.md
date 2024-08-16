@@ -2,17 +2,13 @@
 
 [![CI/CD](https://github.com/athletedecoded/lfr-cli/actions/workflows/cicd.yml/badge.svg)](https://github.com/athletedecoded/lfr-cli/actions/workflows/cicd.yml)
 
-**Known Bugs:**
-
-🪲 Create new user profile occasionally fails with error "password doesn't contain symbol"
-
 --- 
 
 ### Setup
 
-**IAM Role**
+**Create Policy: `lfr-cli-admin`**
 
-Create an admin user 'lfr-cli' and attach policy 'lfr-cli-admin' below: 
+IAM Console > Policies > Create Policy > JSON Editor:
 
 ```
 {
@@ -30,6 +26,10 @@ Create an admin user 'lfr-cli' and attach policy 'lfr-cli-admin' below:
     ]
 }
 ```
+
+**Create User: `lfr-cli`**
+
+IAM Console > Users > Create User > Attach policies directly: `lfr-cli-admin`
 
 **Env**
 
@@ -54,7 +54,7 @@ $ cargo build --release
 
 The binary is now available in `/target/release`
 
-A prebuilt binary is also available at:
+A prebuilt binary is also available at: [https://github.com/athletedecoded/lfr-cli/releases](https://github.com/athletedecoded/lfr-cli/releases)
 
 ---
 
@@ -63,7 +63,6 @@ A prebuilt binary is also available at:
 **Assumptions/Rules:**
 
 * A user may only be attached to one group
-* 
 
 
 To run in "developer mode" use `cargo run` instead of `./lfr`

@@ -1,3 +1,5 @@
+# Settings > Actions > General > Workflow Permissions: Read & Write Permissions
+
 name: Release
 
 on:
@@ -41,4 +43,4 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: target/release/transcribe
+          files: target/release/lfr
