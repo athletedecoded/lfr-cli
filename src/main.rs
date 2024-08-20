@@ -1,24 +1,21 @@
-use std::fs::File;
-use std::io::Write;
-use clap::{Parser, ArgAction};
 use aws_sdk_iam::Client as IamClient;
 use aws_sdk_lightsail::Client as LightsailClient;
 use aws_sdk_secretsmanager::Client as SecretsClient;
+use clap::{ArgAction, Parser};
 use lfr::{
-    create_instance, delete_instance, get_instance,
-    create_group, delete_group,
-    create_user, delete_user, delete_user_instances,
-    build_instance_config,  build_iam_config
+    build_iam_config, build_instance_config, create_group, create_instance, create_user,
+    delete_group, delete_instance, delete_user, delete_user_instances, get_instance,
 };
-
+use std::fs::File;
+use std::io::Write;
 
 #[derive(Parser)]
 //add extended help
 #[clap(
-version = "1.0",
-author = "Kahlia Hogg",
-about = "AWS LFR CLI",
-after_help = "Example: cargo run new --user <username> --group <iam_group> --size <size> --mtype <machine_type>"
+    version = "1.0",
+    author = "Kahlia Hogg",
+    about = "AWS LFR CLI",
+    after_help = "Example: cargo run new --user <username> --group <iam_group> --size <size> --mtype <machine_type>"
 )]
 struct Cli {
     #[clap(subcommand)]
@@ -35,13 +32,13 @@ enum Commands {
         #[clap(short, long)]
         size: String,
         #[clap(short, long)]
-        mtype: String
+        mtype: String,
     },
     Get {
         #[clap(short, long)]
         instance: Option<String>,
         #[clap(short, long, action = ArgAction::SetTrue)]
-        key: Option<bool>
+        key: Option<bool>,
     },
     Instance {
         #[clap(short, long)]
@@ -49,7 +46,7 @@ enum Commands {
         #[clap(short, long)]
         size: String,
         #[clap(short, long)]
-        mtype: String
+        mtype: String,
     },
     Delete {
         #[clap(short, long)]
@@ -57,12 +54,12 @@ enum Commands {
         #[clap(short, long)]
         user: Option<String>,
         #[clap(short, long)]
-        group: Option<String>
+        group: Option<String>,
     },
     Group {
         #[clap(short, long)]
-        name: String
-    }
+        name: String,
+    },
 }
 
 #[tokio::main]
@@ -78,7 +75,12 @@ async fn main() {
     let secrets_client = SecretsClient::new(&config);
     // Match on subcommand
     match args.command {
-        Some(Commands::New { user, group, size, mtype }) => {
+        Some(Commands::New {
+            user,
+            group,
+            size,
+            mtype,
+        }) => {
             // Create instance
             let zone = dotenv::var("LFR_ZONE").expect("LFR_ZONE not set");
             let instance_config = build_instance_config(&user, &size, &mtype, &zone);
@@ -87,7 +89,7 @@ async fn main() {
             // Create IAM User
             let iam_config = build_iam_config(&user, &group, &arn);
             let _ = create_user(iam_client.clone(), secrets_client.clone(), iam_config).await;
-        },
+        }
         Some(Commands::Get { instance, key }) => {
             // Get instance details
             if let Some(instance_name) = instance {
@@ -113,7 +115,7 @@ async fn main() {
                 // Handle the case where none of the options are supplied
                 println!("ERROR: Incorrect arguments supplied.");
             }
-        },
+        }
         Some(Commands::Instance { user, size, mtype }) => {
             // Create new instance
             let zone = dotenv::var("LFR_ZONE").expect("LFR_ZONE not set");
@@ -121,9 +123,16 @@ async fn main() {
             let instance_details = create_instance(lfr_client.clone(), instance_config).await;
             let arn = instance_details.instance.unwrap().arn.unwrap();
             // ToDo: Auto add instance arn to policy
-            println!("SUCCESS: Manually add instance arn {} to policy 'lfr-{}-access'", &arn, &user);
-        },
-        Some(Commands::Delete {instance, user, group}) => {
+            println!(
+                "SUCCESS: Manually add instance arn {} to policy 'lfr-{}-access'",
+                &arn, &user
+            );
+        }
+        Some(Commands::Delete {
+            instance,
+            user,
+            group,
+        }) => {
             // Delete single instance
             if let Some(instance_name) = instance {
                 let _resp = delete_instance(lfr_client.clone(), &instance_name).await;
@@ -137,19 +146,25 @@ async fn main() {
                 } else {
                     // Delete entire group (all users + their instances)
                     let account_id = dotenv::var("AWS_ACCOUNT_ID").expect("AWS_ACCOUNT_ID not set");
-                    let _ = delete_group(iam_client.clone(), lfr_client.clone(), &group_name, &account_id).await;
+                    let _ = delete_group(
+                        iam_client.clone(),
+                        lfr_client.clone(),
+                        &group_name,
+                        &account_id,
+                    )
+                    .await;
                     println!("SUCCESS: Deleted group: {}", group_name);
                 }
             } else {
                 // Handle the case where none of the options are supplied
                 println!("ERROR: Incorrect arguments supplied.");
             }
-        },
-        Some(Commands::Group {name}) => {
+        }
+        Some(Commands::Group { name }) => {
             let account_id = dotenv::var("AWS_ACCOUNT_ID").expect("AWS_ACCOUNT_ID not set");
             let _ = create_group(iam_client.clone(), &name, &account_id).await;
             println!("SUCCESS: Created new group {}", &name);
-        },
+        }
         None => {
             println!("No subcommand was used");
         }

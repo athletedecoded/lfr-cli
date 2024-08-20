@@ -2,7 +2,8 @@
 
 [![CI/CD](https://github.com/athletedecoded/lfr-cli/actions/workflows/cicd.yml/badge.svg)](https://github.com/athletedecoded/lfr-cli/actions/workflows/cicd.yml)
 
---- 
+
+![image](banner.png)
 
 ### Setup
 
@@ -31,17 +32,25 @@ IAM Console > Policies > Create Policy > JSON Editor:
 
 IAM Console > Users > Create User > Attach policies directly: `lfr-cli-admin`
 
-**Env**
+Create access key for 
 
-1. Create access key for user 'lfr-cli'
-2. Using the `example.env` template, configure `.env` file
+**Configure Environment**
+
+In `sample.env` add lfr-cli access key and AWS account ID values
 
 ```
-AWS_ACCESS_KEY_ID=<YOUR_ACCESS_KEY>
-AWS_SECRET_ACCESS_KEY=<YOUR_SECRET_KEY>
-AWS_DEFAULT_REGION=<YOUR_AWS_REGION>
-LFR_ZONE=<LFR_AVAILABILITY_ZONE>
-AWS_ACCOUNT_ID=<YOUR_ACCOUNT_ID>
+# sample.env
+AWS_ACCESS_KEY_ID=<LFR_CLI_ACCESS_KEY>
+AWS_SECRET_ACCESS_KEY=<LFR_CLI_SECRET_KEY>
+AWS_ACCOUNT_ID=<DUKE_ACCOUNT_ID>
+AWS_DEFAULT_REGION=us-east-2
+LFR_ZONE=us-east-2a
+```
+
+Move/rename `sample.env` to `.env`
+
+```
+$ mv sample.env .env
 ```
 
 ---
